@@ -8,8 +8,8 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 # --- CONFIGURAÇÕES ---
-PASTA_A_COPIAR = 'C:/Users/Ana/Desktop/area' 
-NOME_DO_BACKUP = 'backup_area'
+PASTA_A_COPIAR = 'C:/caminho/completo/para/sua/pasta' 
+NOME_DO_BACKUP = 'backup'
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 def autenticar_google_drive():
