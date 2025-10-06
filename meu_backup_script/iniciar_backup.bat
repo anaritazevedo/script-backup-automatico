@@ -1,2 +1,2 @@
-cd "C:\Users\Ana\Desktop\meu_backup_script"
+cd "C:\Users\User\Desktop\meu_backup_script"
 py backup_script.py
