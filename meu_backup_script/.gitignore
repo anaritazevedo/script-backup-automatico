@@ -1,0 +1,10 @@
+ # Arquivos de credenciais do Google
+# NUNCA compartilhe esses arquivos
+credentials.json
+token.json
+
+# Ignorar todos os arquivos .zip gerados pelo backup
+*.zip
+
+# Ignorar arquivos temporários e de cache do Python
+__pycache__/
