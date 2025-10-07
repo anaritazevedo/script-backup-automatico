@@ -8,3 +8,6 @@ token.json
 
 # Ignorar arquivos temporários e de cache do Python
 __pycache__/
+
+# Ignorar o arquivo de log
+backup.log

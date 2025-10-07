@@ -22,6 +22,8 @@ A perda de dados locais é um risco constante para qualquer desenvolvedor ou usu
 -   📅 Nomenclatura Inteligente: Cada backup é nomeado com a data no formato DD-MM-AAAA, criando um histórico de versões claro e organizado.
 -   🔐 Autenticação Segura: Implementa o fluxo OAuth 2.0 para uma autenticação segura com a API do Google, sem expor senhas.
 -   🧹 Limpeza Automática: Após o upload bem-sucedido, o arquivo .zip local é removido para liberar espaço em disco.
+-   -   🧹 **Limpeza Automática:** Remove o arquivo `.zip` local após a conclusão do upload para liberar espaço em disco.
+
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -109,6 +111,7 @@ Utilize o Agendador de Tarefas do Windows para executar o `iniciar_backup.bat` n
 ├── README.md           # Este arquivo de instruções
 ├── backup_script.py    # O script principal de backup
 ├── config.ini          # Arquivo de configurações do backup
+├── requirements.txt    # Lista de dependências Python do projeto
 └── iniciar_backup.bat  # Lançador para automação no Windows
 
 ## 🤝 Como Contribuir

@@ -2,6 +2,8 @@ import os
 import shutil
 from datetime import datetime
 import configparser 
+import logging
+import sys
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -17,8 +19,24 @@ NOME_DO_BACKUP = config.get('Backup', 'nome_do_backup')
 
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+file_handler = logging.FileHandler('backup.log', encoding='utf-8')
+file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%m-%Y %H:%M:%S')
+file_handler.setFormatter(file_formatter)
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_formatter = logging.Formatter('%(message)s') 
+console_handler.setFormatter(console_formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+
 def autenticar_google_drive():
-    print("Autenticando com o Google Drive...")
+    logging.info("Autenticando com o Google Drive...")
     creds = None
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
@@ -32,64 +50,54 @@ def autenticar_google_drive():
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
     
-    print("Autenticação bem-sucedida.")
+    logging.info("Autenticação bem-sucedida.")
     return build('drive', 'v3', credentials=creds)
 
 def compactar_pasta(caminho_pasta, nome_arquivo_saida):
-    print(f"Compactando a pasta '{caminho_pasta}'...")
+    logging.info(f"Zipando backup da pasta '{caminho_pasta}'...")
     try:
         caminho_zip = shutil.make_archive(nome_arquivo_saida, 'zip', caminho_pasta)
-        print(f"Pasta compactada com sucesso em: '{caminho_zip}'")
         return caminho_zip
     except Exception as e:
-        print(f"ERRO ao compactar a pasta: {e}")
+        logging.error(f"Falha ao compactar a pasta: {e}")
         return None
 
 def upload_para_drive(service, arquivo):
-    print(f"Iniciando upload do arquivo '{arquivo}'...")
+    logging.info(f"Fazendo upload do backup '{os.path.basename(arquivo)}'...")
     file_metadata = {'name': os.path.basename(arquivo)}
     media = MediaFileUpload(arquivo, resumable=True)
     
     try:
         file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        print(f"Upload concluído! Arquivo enviado com ID: {file.get('id')}")
+        logging.info("Upload realizado com sucesso!")
         return file.get('id')
     except Exception as e:
-        print(f"ERRO ao enviar arquivo '{arquivo}': {e}")
+        logging.error(f"Falha ao enviar arquivo: {e}")
         return None
 
 def limpar_backups_antigos(service, nome_base_backup):
-    print("Procurando por backups antigos para limpar...")
-    
     try:
         query = f"name contains '{nome_base_backup}' and trashed = false"
-        response = service.files().list(
-            q=query,
-            spaces='drive',
-            fields='files(id, name, createdTime)'
-        ).execute()
+        response = service.files().list(q=query, spaces='drive', fields='files(id, name, createdTime)').execute()
         files = response.get('files', [])
 
         if len(files) > 1:
             files.sort(key=lambda x: x['createdTime'], reverse=True)
-            
             arquivos_para_deletar = files[1:]
-            print(f"Encontrados {len(arquivos_para_deletar)} backups antigos para remover.")
-
-            for file in arquivos_para_deletar:
-                file_id = file.get('id')
-                file_name = file.get('name')
-                print(f"  - Deletando '{file_name}'...")
-                service.files().delete(fileId=file_id).execute()
             
-            print("Limpeza de backups antigos concluída.")
+            for file in arquivos_para_deletar:
+                file_id, file_name = file.get('id'), file.get('name')
+                logging.info(f"Deletando o arquivo zipado antigo do Drive: '{file_name}'...")
+                service.files().delete(fileId=file_id).execute()
+                logging.info("Arquivo antigo do Drive deletado.")
         else:
-            print("Nenhum backup antigo para limpar.")
+            logging.info("Nenhum backup antigo encontrado no Drive para limpar.")
 
     except Exception as e:
-        print(f"ERRO durante a limpeza de backups antigos: {e}")
+        logging.error(f"Falha durante a limpeza de backups antigos: {e}")
 
 def main():
+    logging.info("\n--- INICIANDO PROCESSO DE BACKUP ---")
     timestamp = datetime.now().strftime('%d-%m-%Y')
     nome_arquivo_zip_base = f"{NOME_DO_BACKUP}_{timestamp}"
 
@@ -97,15 +105,17 @@ def main():
     
     if caminho_arquivo_compactado:
         servico_drive = autenticar_google_drive()
-        
         id_arquivo_novo = upload_para_drive(servico_drive, caminho_arquivo_compactado)
 
         if id_arquivo_novo:
             limpar_backups_antigos(servico_drive, NOME_DO_BACKUP)
 
-        print(f"Limpando arquivo zip local: '{caminho_arquivo_compactado}'...")
+        logging.info(f"Deletando o arquivo zipado localmente: '{caminho_arquivo_compactado}'...")
         os.remove(caminho_arquivo_compactado)
-        print("Processo de backup concluído e arquivo zip local removido. ✅")
+        logging.info("Arquivo zipado localmente deletado.")
+        logging.info("--- PROCESSO DE BACKUP CONCLUÍDO ---")
+    else:
+        logging.error("--- PROCESSO DE BACKUP FALHOU NA ETAPA DE COMPACTAÇÃO ---")
 
 if __name__ == '__main__':
     main()
