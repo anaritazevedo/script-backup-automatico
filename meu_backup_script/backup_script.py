@@ -35,7 +35,6 @@ def compactar_pasta(caminho_pasta, nome_arquivo_saida):
     """Compacta uma pasta no formato .zip e retorna o caminho do arquivo."""
     print(f"Compactando a pasta '{caminho_pasta}'...")
     try:
-        # shutil.make_archive cria o .zip, por isso não adicionamos a extensão no nome
         caminho_zip = shutil.make_archive(nome_arquivo_saida, 'zip', caminho_pasta)
         print(f"Pasta compactada com sucesso em: '{caminho_zip}'")
         return caminho_zip
@@ -57,29 +56,56 @@ def upload_para_drive(service, arquivo):
         print(f"ERRO ao enviar arquivo '{arquivo}': {e}")
         return None
 
+def limpar_backups_antigos(service, nome_base_backup):
+    """Encontra e deleta todos os backups antigos, mantendo apenas o mais recente."""
+    print("Procurando por backups antigos para limpar...")
+    
+    try:
+        query = f"name contains '{nome_base_backup}' and trashed = false"
+        response = service.files().list(
+            q=query,
+            spaces='drive',
+            fields='files(id, name, createdTime)' 
+        ).execute()
+        files = response.get('files', [])
+
+        if len(files) > 1:
+            files.sort(key=lambda x: x['createdTime'], reverse=True)
+            
+            arquivos_para_deletar = files[1:]
+            print(f"Encontrados {len(arquivos_para_deletar)} backups antigos para remover.")
+
+            for file in arquivos_para_deletar:
+                file_id = file.get('id')
+                file_name = file.get('name')
+                print(f"  - Deletando '{file_name}'...")
+                service.files().delete(fileId=file_id).execute()
+            
+            print("Limpeza de backups antigos concluída.")
+        else:
+            print("Nenhum backup antigo para limpar.")
+
+    except Exception as e:
+        print(f"ERRO durante a limpeza de backups antigos: {e}")
+
 def main():
     """Função principal que orquestra todo o processo de backup."""
-    # Gera um nome de arquivo único com data e hora
-    timestamp = datetime.now().strftime('%d_%m_%Y')
+    timestamp = datetime.now().strftime('%d-%m-%Y')
     nome_arquivo_zip_base = f"{NOME_DO_BACKUP}_{timestamp}"
 
-    # 1. Compacta a pasta
     caminho_arquivo_compactado = compactar_pasta(PASTA_A_COPIAR, nome_arquivo_zip_base)
     
-    # 2. Se a compactação funcionou, continua para o upload
     if caminho_arquivo_compactado:
-        # 3. Autentica e obtém o serviço do Drive
         servico_drive = autenticar_google_drive()
         
-        # 4. Faz o upload do arquivo
-        upload_para_drive(servico_drive, caminho_arquivo_compactado)
+        id_arquivo_novo = upload_para_drive(servico_drive, caminho_arquivo_compactado)
 
-        # 5. Remove o arquivo .zip local para economizar espaço
+        if id_arquivo_novo:
+            limpar_backups_antigos(servico_drive, NOME_DO_BACKUP)
+
         print(f"Limpando arquivo zip local: '{caminho_arquivo_compactado}'...")
         os.remove(caminho_arquivo_compactado)
-        print("Backup concluído e arquivo local removido. ✅")
+        print("Processo de backup concluído. ✅")
 
-# Ponto de entrada do script:
-# Esta linha garante que a função main() só será executada quando você rodar o script diretamente.
 if __name__ == '__main__':
     main()
