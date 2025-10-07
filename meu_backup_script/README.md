@@ -4,6 +4,8 @@
 ![License](https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-funcional-brightgreen.svg?style=for-the-badge)
 
+---
+
 Um script de automação robusto e eficiente para realizar backups de diretórios locais diretamente no Google Drive, projetado para ser executado automaticamente na inicialização do Windows.
 
 ---
@@ -14,11 +16,12 @@ A perda de dados locais é um risco constante para qualquer desenvolvedor ou usu
 
 ## ✨ Funcionalidades Principais
 
--   🔄 **Automação Completa:** Executa automaticamente no logon do usuário via Agendador de Tarefas.
--   🗜️ **Compressão Eficiente:** Compacta a pasta de origem em um arquivo `.zip`, economizando espaço na nuvem.
--   📅 **Nomenclatura Inteligente:** Cada backup é nomeado com a data no formato `DD-MM-AAAA`, criando um histórico de versões claro e organizado.
--   🔐 **Autenticação Segura:** Implementa o fluxo OAuth 2.0 para uma autenticação segura com a API do Google, sem expor senhas.
--   🧹 **Limpeza Automática:** Após o upload bem-sucedido, o arquivo `.zip` local é removido para liberar espaço em disco.
+-   🔄 Automação Completa: Executa automaticamente no logon do usuário via Agendador de Tarefas.
+-   ⚙️ Configuração Flexível: Parâmetros como a pasta de backup são gerenciados em um arquivo config.ini, sem a necessidade de alterar o código-fonte.
+-   🗜️ Compressão Eficiente: Compacta a pasta de origem em um arquivo .zip, economizando espaço na nuvem.
+-   📅 Nomenclatura Inteligente: Cada backup é nomeado com a data no formato DD-MM-AAAA, criando um histórico de versões claro e organizado.
+-   🔐 Autenticação Segura: Implementa o fluxo OAuth 2.0 para uma autenticação segura com a API do Google, sem expor senhas.
+-   🧹 Limpeza Automática: Após o upload bem-sucedido, o arquivo .zip local é removido para liberar espaço em disco.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -39,13 +42,14 @@ O processo é orquestrado para ser simples e resiliente:
    └──> 2. Agendador de Tarefas aciona o 'iniciar_backup.bat'
         └──> 3. O .bat define o diretório correto e executa 'backup_script.py'
              └──> 4. O Script Python:
-                  ├── a. Autentica com o Google Drive (usando 'token.json')
-                  ├── b. Compacta o diretório local alvo
-                  ├── c. Faz o upload do arquivo .zip
-                  └── d. Remove o arquivo .zip local
+                  ├── a. Lê as configurações do 'config.ini'
+                  ├── b. Autentica com o Google Drive (usando 'token.json')
+                  ├── c. Compacta o diretório local alvo
+                  ├── d. Faz o upload do arquivo .zip
+                  └── e. Remove o arquivo .zip local
 ```
 
-> **Nota:** Na primeira execução, o fluxo de autenticação (passo 4a) irá abrir um navegador para que o usuário conceda as permissões necessárias, criando o arquivo `token.json` para as futuras execuções.
+> **Nota:** Na primeira execução, o fluxo de autenticação irá abrir um navegador para que o usuário conceda as permissões necessárias, criando o arquivo `token.json` para as futuras execuções.
 
 ## 🚀 Começando
 
@@ -75,14 +79,17 @@ Para colocar este projeto em funcionamento no seu ambiente, siga os passos abaix
     -   Faça o download do arquivo de credenciais.
     -   **Importante:** Renomeie o arquivo para `credentials.json` e coloque-o na raiz deste projeto. Este arquivo é pessoal e intransferível (já está no `.gitignore`).
 
-4.  **Configure o Script:**
-    -   Abra o arquivo `backup_script.py`.
-    -   Altere a variável `PASTA_A_COPIAR` para o caminho absoluto da pasta que você deseja fazer backup.
-        ```python
-        PASTA_A_COPIAR = 'C:/caminho/completo/para/sua/pasta'
+4.  **Crie e Configure o Arquivo config.ini:**
+-   Crie e Configure o Arquivo config.ini:
+-   Crie um arquivo chamado config.ini na raiz do projeto.
+-   Copie e cole o conteúdo abaixo nele, alterando o valor de pasta_a_copiar para o caminho da pasta que você deseja fazer backup.
+        ```
+        [Backup]
+        pasta_a_copiar = C:/caminho/completo/para/sua/pasta
+        nome_do_backup = backup_projetos
         ```
 
-##  kullanım Uso
+##  Uso 💻
 
 ### Primeira Execução Manual
 
@@ -94,7 +101,15 @@ Siga as instruções no navegador que será aberto para conceder as permissões.
 
 ### Configurando a Automação
 
-Utilize o Agendador de Tarefas do Windows para executar o `iniciar_backup.bat` no logon do usuário. Siga o guia [neste link](https://www.windowscentral.com/how-create-automated-task-using-task-scheduler-windows-10) ou use os passos simplificados no `README` anterior.
+Utilize o Agendador de Tarefas do Windows para executar o `iniciar_backup.bat` no logon do usuário. Siga o guia [neste link](https://www.windowscentral.com/how-create-automated-task-using-task-scheduler-windows-10).
+
+## 📂 Estrutura de Arquivos
+.
+├── .gitignore          # Arquivos e pastas a serem ignorados pelo Git
+├── README.md           # Este arquivo de instruções
+├── backup_script.py    # O script principal de backup
+├── config.ini          # Arquivo de configurações do backup
+└── iniciar_backup.bat  # Lançador para automação no Windows
 
 ## 🤝 Como Contribuir
 
@@ -108,7 +123,7 @@ Contribuições são o que tornam a comunidade de código aberto um lugar incrí
 
 ## ⚖️ Licença
 
-Distribuído sob a Licença MIT. Veja `LICENSE.txt` para mais informações.
+Distribuído sob a Licença MIT.
 
 ## 👤 Autora
 

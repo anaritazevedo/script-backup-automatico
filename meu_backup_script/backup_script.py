@@ -1,6 +1,7 @@
 import os
 import shutil
 from datetime import datetime
+import configparser 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -8,12 +9,15 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 # --- CONFIGURAÇÕES ---
-PASTA_A_COPIAR = 'C:/caminho/completo/para/sua/pasta' 
-NOME_DO_BACKUP = 'backup'
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+PASTA_A_COPIAR = config.get('Backup', 'pasta_a_copiar')
+NOME_DO_BACKUP = config.get('Backup', 'nome_do_backup')
+
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 def autenticar_google_drive():
-    """Autentica com a API do Google Drive e retorna o serviço."""
     print("Autenticando com o Google Drive...")
     creds = None
     if os.path.exists('token.json'):
@@ -32,7 +36,6 @@ def autenticar_google_drive():
     return build('drive', 'v3', credentials=creds)
 
 def compactar_pasta(caminho_pasta, nome_arquivo_saida):
-    """Compacta uma pasta no formato .zip e retorna o caminho do arquivo."""
     print(f"Compactando a pasta '{caminho_pasta}'...")
     try:
         caminho_zip = shutil.make_archive(nome_arquivo_saida, 'zip', caminho_pasta)
@@ -43,7 +46,6 @@ def compactar_pasta(caminho_pasta, nome_arquivo_saida):
         return None
 
 def upload_para_drive(service, arquivo):
-    """Faz o upload de um arquivo para o Google Drive."""
     print(f"Iniciando upload do arquivo '{arquivo}'...")
     file_metadata = {'name': os.path.basename(arquivo)}
     media = MediaFileUpload(arquivo, resumable=True)
@@ -57,7 +59,6 @@ def upload_para_drive(service, arquivo):
         return None
 
 def limpar_backups_antigos(service, nome_base_backup):
-    """Encontra e deleta todos os backups antigos, mantendo apenas o mais recente."""
     print("Procurando por backups antigos para limpar...")
     
     try:
@@ -65,7 +66,7 @@ def limpar_backups_antigos(service, nome_base_backup):
         response = service.files().list(
             q=query,
             spaces='drive',
-            fields='files(id, name, createdTime)' 
+            fields='files(id, name, createdTime)'
         ).execute()
         files = response.get('files', [])
 
@@ -89,7 +90,6 @@ def limpar_backups_antigos(service, nome_base_backup):
         print(f"ERRO durante a limpeza de backups antigos: {e}")
 
 def main():
-    """Função principal que orquestra todo o processo de backup."""
     timestamp = datetime.now().strftime('%d-%m-%Y')
     nome_arquivo_zip_base = f"{NOME_DO_BACKUP}_{timestamp}"
 
@@ -105,7 +105,7 @@ def main():
 
         print(f"Limpando arquivo zip local: '{caminho_arquivo_compactado}'...")
         os.remove(caminho_arquivo_compactado)
-        print("Processo de backup concluído. ✅")
+        print("Processo de backup concluído e arquivo zip local removido. ✅")
 
 if __name__ == '__main__':
     main()
